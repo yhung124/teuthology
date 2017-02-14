@@ -334,6 +334,11 @@ class CephAnsible(Task):
     def run_rh_playbook(self):
         ceph_installer = self.ceph_installer
         args = self.args
+        # check if we want to setup a cdn repo for upgrades
+        from tasks.set_repo import GA_BUILDS, set_cdn_repo
+        rhbuild = self.config.get('rhbuild')
+        if rhbuild in GA_BUILDS:
+            set_cdn_repo(ctx)
         # install ceph-ansible
         if ceph_installer.os.package_type == 'rpm':
             ceph_installer.run(args=[
