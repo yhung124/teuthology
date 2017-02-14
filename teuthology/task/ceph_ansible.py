@@ -338,7 +338,7 @@ class CephAnsible(Task):
         from tasks.set_repo import GA_BUILDS, set_cdn_repo
         rhbuild = self.config.get('rhbuild')
         if rhbuild in GA_BUILDS:
-            set_cdn_repo(ctx)
+            set_cdn_repo(self.ctx, self.config)
         # install ceph-ansible
         if ceph_installer.os.package_type == 'rpm':
             ceph_installer.run(args=[
