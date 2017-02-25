@@ -12,9 +12,7 @@ from tempfile import NamedTemporaryFile
 from ..config import config as teuth_config
 from ..misc import get_scratch_devices,  reconnect
 from teuthology import contextutil
-from teuthology.orchestra import run, remote
-from teuthology.task.internal.lock_machines import lock_machines
-from teuthology.task.internal.redhat import _setup_latest_repo
+from teuthology.orchestra import run
 from teuthology.nuke import remove_osd_mounts, remove_ceph_packages
 
 from teuthology import misc
@@ -336,24 +334,7 @@ class CephAnsible(Task):
 
     def run_rh_playbook(self):
         args = self.args
-        config = (1, self.ctx.config.get('machine_type'), 'rhel', '7.3')
-        targets = self.ctx.config['targets']
-        with lock_machines(self.ctx, config):
-            log.info("Locked installer node")
-        log.info("locked installer node")
-        new_target = self.ctx.config['targets']
-        for rem, key in new_target.iteritems():
-            name = misc.canonicalize_hostname(rem)
-            ceph_installer = remote.Remote(name=name, host_key=key,
-                                           keep_alive=True)
-            self.installer = ceph_installer
-            self.ctx.cluster.add(ceph_installer, ['installer.0'])
-            log.info('roles: %s - %s' % (ceph_installer, 'installer.0'))
-        # update repo on new node
-        _setup_latest_repo(self.ctx, None)
-        # update previous targets
-        self.ctx.config['targets'].update(targets)
-        # check if we want to setup a cdn repo for upgrades
+        (ceph_installer,) = self.ctx.cluster.only('installer.0').remotes
         from tasks.set_repo import GA_BUILDS, set_cdn_repo
         rhbuild = self.config.get('rhbuild')
         if rhbuild in GA_BUILDS:
