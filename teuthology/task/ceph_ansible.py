@@ -337,13 +337,9 @@ class CephAnsible(Task):
         args = self.args
         config = (1, self.ctx.config.get('machine_type'), 'rhel', '7.3')
         targets = self.ctx.config['targets']
-        with lock_machines(self.ctx, config):
-            log.info("locked installer node")
-        # update previous targets
-        log.info(self.ctx.config)
+        lock_machines.__enter__(self.ctx, config)
+        log.info("locked installer node")
         new_target = self.ctx.config['targets']
-        self.ctx.config['targets'].update(targets)
-        log.info(self.ctx.config)
         for rem, key in new_target.iteritems():
             name = misc.canonicalize_hostname(rem)
             ceph_installer = remote.Remote(name=name, host_key=key,
@@ -351,6 +347,8 @@ class CephAnsible(Task):
             self.installer = ceph_installer
             self.ctx.cluster.add(ceph_installer, ['installer.0'])
             log.info('roles: %s - %s' % (ceph_installer, 'installer.0'))
+        # update previous targets
+        self.ctx.config['targets'].update(targets)
         # check if we want to setup a cdn repo for upgrades
         from tasks.set_repo import GA_BUILDS, set_cdn_repo
         rhbuild = self.config.get('rhbuild')
