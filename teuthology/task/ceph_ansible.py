@@ -335,7 +335,7 @@ class CephAnsible(Task):
 
     def run_rh_playbook(self):
         args = self.args
-        config = (1, 'multi', 'rhel', '7.3')
+        config = (1, self.ctx.config.get('machine_type'), 'rhel', '7.3')
         targets = self.ctx.config['targets']
         with lock_machines(self.ctx, config):
             log.info("locked installer node")
