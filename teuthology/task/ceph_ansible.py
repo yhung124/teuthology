@@ -337,7 +337,8 @@ class CephAnsible(Task):
         args = self.args
         config = (1, self.ctx.config.get('machine_type'), 'rhel', '7.3')
         targets = self.ctx.config['targets']
-        lock_machines.__enter__(self.ctx, config)
+        with lock_machines(self.ctx, config):
+            log.info("Locked installer node")
         log.info("locked installer node")
         new_target = self.ctx.config['targets']
         for rem, key in new_target.iteritems():
