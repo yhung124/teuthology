@@ -14,6 +14,7 @@ from ..misc import get_scratch_devices,  reconnect
 from teuthology import contextutil
 from teuthology.orchestra import run, remote
 from teuthology.task.internal.lock_machines import lock_machines
+from teuthology.task.internal.redhat import _setup_latest_repo
 from teuthology.nuke import remove_osd_mounts, remove_ceph_packages
 
 from teuthology import misc
@@ -348,6 +349,8 @@ class CephAnsible(Task):
             self.installer = ceph_installer
             self.ctx.cluster.add(ceph_installer, ['installer.0'])
             log.info('roles: %s - %s' % (ceph_installer, 'installer.0'))
+        # update repo on new node
+        _setup_latest_repo(self.ctx, None)
         # update previous targets
         self.ctx.config['targets'].update(targets)
         # check if we want to setup a cdn repo for upgrades
@@ -391,7 +394,7 @@ class CephAnsible(Task):
             check_status=False,
             stdout=out
         )
-        log.info(out.getvalue())
+        # log.info(out.getvalue())
         if re.search(r'all hosts have already failed', out.getvalue()):
             log.error("Failed during ceph-ansible execution")
             raise CephAnsibleError("Failed during ceph-ansible execution")
