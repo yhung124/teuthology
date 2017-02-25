@@ -496,7 +496,7 @@ class CephAnsible(Task):
                     else:
                         remot.run(args=[
                             'sudo',
-                            'apt-get'
+                            'apt-get',
                             '-y',
                             'install',
                             'ceph-common',
