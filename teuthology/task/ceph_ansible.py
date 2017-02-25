@@ -12,8 +12,10 @@ from tempfile import NamedTemporaryFile
 from ..config import config as teuth_config
 from ..misc import get_scratch_devices,  reconnect
 from teuthology import contextutil
-from teuthology.orchestra import run
+from teuthology.orchestra import run, remote
+from teuthology.task.internal.lock_machines import lock_machines
 from teuthology.nuke import remove_osd_mounts, remove_ceph_packages
+
 from teuthology import misc
 log = logging.getLogger(__name__)
 
@@ -199,9 +201,9 @@ class CephAnsible(Task):
         for group in sorted(groups_to_roles.keys()):
             role_prefix = groups_to_roles[group]
             want = lambda role: role.startswith(role_prefix)
-            for (remote, roles) in self.cluster.only(want).remotes.iteritems():
-                hostname = remote.hostname
-                host_vars = self.get_host_vars(remote)
+            for (remot, roles) in self.cluster.only(want).remotes.iteritems():
+                hostname = remot.hostname
+                host_vars = self.get_host_vars(remot)
                 if group not in hosts_dict:
                     hosts_dict[group] = {hostname: host_vars}
                 elif hostname not in hosts_dict[group]:
@@ -332,8 +334,23 @@ class CephAnsible(Task):
         return host_vars
 
     def run_rh_playbook(self):
-        ceph_installer = self.ceph_installer
         args = self.args
+        config = (1, 'multi', 'rhel', '7.3')
+        targets = self.ctx.config['targets']
+        with lock_machines(self.ctx, config):
+            log.info("locked installer node")
+        # update previous targets
+        log.info(self.ctx.config)
+        new_target = self.ctx.config['targets']
+        self.ctx.config['targets'].update(targets)
+        log.info(self.ctx.config)
+        for rem, key in new_target.iteritems():
+            name = misc.canonicalize_hostname(rem)
+            ceph_installer = remote.Remote(name=name, host_key=key,
+                                           keep_alive=True)
+            self.installer = ceph_installer
+            self.ctx.cluster.add(ceph_installer, ['installer.0'])
+            log.info('roles: %s - %s' % (ceph_installer, 'installer.0'))
         # check if we want to setup a cdn repo for upgrades
         from tasks.set_repo import GA_BUILDS, set_cdn_repo
         rhbuild = self.config.get('rhbuild')
@@ -481,11 +498,11 @@ class CephAnsible(Task):
         self.ctx.cluster.only('mon.a').run(args=['sudo', 'ceph', 'auth',
                                                  'get', 'client.admin'],
                                            stdout=ceph_admin_keyring)
-        for remote, roles in self.ctx.cluster.remotes.iteritems():
+        for remot, roles in self.ctx.cluster.remotes.iteritems():
             for role in roles:
                 if role.startswith('client'):
-                    if remote.os.package_type == 'rpm':
-                        remote.run(args=[
+                    if remot.os.package_type == 'rpm':
+                        remot.run(args=[
                             'sudo',
                             'yum',
                             'install',
@@ -494,7 +511,7 @@ class CephAnsible(Task):
                             'ceph-test'
                         ])
                     else:
-                        remote.run(args=[
+                        remot.run(args=[
                             'sudo',
                             'apt-get'
                             '-y',
@@ -503,11 +520,11 @@ class CephAnsible(Task):
                             'ceph-test'
                         ])
                     misc.sudo_write_file(
-                        remote,
+                        remot,
                         '/etc/ceph/ceph.conf',
                         ceph_conf_contents.getvalue())
                     misc.sudo_write_file(
-                        remote,
+                        remot,
                         '/etc/ceph/ceph.client.admin.keyring',
                         ceph_admin_keyring.getvalue())
 
