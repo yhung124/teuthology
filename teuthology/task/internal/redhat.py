@@ -7,6 +7,7 @@ import requests
 from tempfile import NamedTemporaryFile
 from teuthology.parallel import parallel
 from teuthology.orchestra import run
+from teuthology.task.install.redhat import set_deb_repo
 
 log = logging.getLogger(__name__)
 
@@ -104,6 +105,13 @@ def _setup_latest_repo(ctx, config):
                     remote.put_file(installer_file.name, installer_file.name)
                     remote.run(args=['sudo', 'cp', installer_file.name,
                                      '/etc/yum.repos.d/rh_inst.repo'])
+            else:
+                deb_repo = ctx.config.get('deb_repo')
+                if ctx.config.get('deb_gpg_key'):
+                    deb_gpg_key = ctx.config.get('deb_gpg_key')
+                else:
+                    deb_gpg_key = None
+                set_deb_repo(remote, deb_repo, deb_gpg_key)
 
 
 def _get_repos_to_use(base_url, repos):
