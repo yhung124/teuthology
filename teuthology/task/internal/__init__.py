@@ -21,7 +21,8 @@ from teuthology.job_status import get_status, set_status
 from teuthology.orchestra import cluster, remote, run
 
 from .redhat import (
-          setup_cdn_repo, setup_base_repo, setup_additional_repo
+          setup_cdn_repo, setup_base_repo, setup_additional_repo,
+          add_installer
         )
 
 log = logging.getLogger(__name__)

@@ -198,6 +198,9 @@ def get_initial_tasks(lock, config, machine_type):
 
     init_tasks.append({'internal.add_remotes': None})
 
+    if 'need-redhat-installer' in config:
+        init_tasks.append({'internal.add_installer': None})
+
     if 'roles' in config:
         init_tasks.extend([
             {'console_log': None},

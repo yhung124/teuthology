@@ -5,9 +5,11 @@ import contextlib
 import logging
 import requests
 from tempfile import NamedTemporaryFile
+from teuthology import misc
 from teuthology.parallel import parallel
-from teuthology.orchestra import run
+from teuthology.orchestra import run, remote
 from teuthology.task.install.redhat import set_deb_repo
+from teuthology.task.internal.lock_machines import lock_machines
 
 log = logging.getLogger(__name__)
 
@@ -70,6 +72,24 @@ def setup_base_repo(ctx, config):
                     remote.run(args=['sudo', 'rm',
                                      run.Raw('/etc/yum.repos.d/rh*.repo'),
                                      ], check_status=False)
+
+
+@contextlib.contextmanager
+def add_installer(ctx, config):
+        conf = (1, ctx.config.get('machine_type'), 'rhel', '7.3')
+        targets = ctx.config['targets']
+        with lock_machines(ctx, conf):
+            log.info("Locked installer node")
+        log.info("locked installer node")
+        new_target = ctx.config['targets']
+        for rem, key in new_target.iteritems():
+            name = misc.canonicalize_hostname(rem)
+            rem = remote.Remote(name=name, host_key=key,
+                                keep_alive=True)
+            ctx.cluster.add(rem, ['installer.0'])
+            log.info('roles: %s - %s' % (rem, 'installer.0'))
+        ctx.config['targets'].update(targets)
+        yield
 
 
 def _setup_latest_repo(ctx, config):
