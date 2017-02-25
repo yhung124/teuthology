@@ -106,9 +106,9 @@ def _setup_latest_repo(ctx, config):
                     remote.run(args=['sudo', 'cp', installer_file.name,
                                      '/etc/yum.repos.d/rh_inst.repo'])
             else:
-                deb_repo = ctx.config.get('deb_repo')
-                if ctx.config.get('deb_gpg_key'):
-                    deb_gpg_key = ctx.config.get('deb_gpg_key')
+                deb_repo = ctx.config.get('deb-repo')
+                if ctx.config.get('deb-gpg-key'):
+                    deb_gpg_key = ctx.config.get('deb-gpg-key')
                 else:
                     deb_gpg_key = None
                 set_deb_repo(remote, deb_repo, deb_gpg_key)
