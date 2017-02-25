@@ -30,6 +30,10 @@ def lock_machines(ctx, config):
     # misc.get_distro_version in provision.create_if_vm
     os_type = ctx.config.get("os_type")
     os_version = ctx.config.get("os_version")
+    if len(config) == 4:
+        log.info("Reserving specific os_type and version")
+        os_type = config[2]
+        os_version = config[3]
     arch = ctx.config.get('arch')
     log.info('Locking machines...')
     assert isinstance(config[0], int), 'config[0] must be an integer'
