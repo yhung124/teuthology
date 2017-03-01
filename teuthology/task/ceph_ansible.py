@@ -334,8 +334,10 @@ class CephAnsible(Task):
 
     def run_rh_playbook(self):
         args = self.args
-        (ceph_installer,) = self.ctx.cluster.only('installer.0').remotes
-        if ceph_installer is None:
+        try:
+            (ceph_installer,) = self.ctx.cluster.only('installer.0').remotes
+        except ValueError:
+            log.info("using first monitor as installer node")
             (ceph_installer,) = self.ctx.cluster.only('mon.a').remotes
         from tasks.set_repo import GA_BUILDS, set_cdn_repo
         rhbuild = self.config.get('rhbuild')
