@@ -61,6 +61,7 @@ setup(
                       'configobj',
                       'six >= 1.9', # python-openstackclient won't work properly with less
                       'httplib2',
+                      'nose', # for qa/tasks/rgw_multisite_tests.py
                       'paramiko',
                       'pexpect',
                       'requests != 2.13.0',
